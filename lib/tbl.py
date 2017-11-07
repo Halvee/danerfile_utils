@@ -1,12 +1,18 @@
+import os
+import sys
 import gzip
 import operator
+import misc
 
 class Tbl(object):
-    def __init__(self, filename, with_header=True, 
+    def __init__(self, filename, 
+                 delim = None,
+                 with_header=True, 
                  cols_recode_str=None):
         self.filename = filename
         self.fh = None
         self.header_list = None
+        self.delim=delim
         self.col_idx = {}
         self.open_fh()
         if with_header == True: 
@@ -33,24 +39,22 @@ class Tbl(object):
 
     def header_to_idx(self, delim=None):
         header_str = self.fh.readline().rstrip()
-        if delim != None:
-            self.header_list = header_str.split(delim)
+        if self.delim != None:
+            self.header_list = header_str.split(self.delim)
         else:
             self.header_list = header_str.split()
         for i in range(len(self.header_list)):
             if self.header_list[i] in self.cols_recode_dict:
                 col_old = self.header_list[i]
-                print(self.header_list[i])
                 self.header_list[i] = self.cols_recode_dict[col_old]
-                print(self.header_list[i])
             self.col_idx[ self.header_list[i] ] = i
         return self
 
-    def get_row(self, delim=None, return_dict=False,
+    def get_row(self, return_dict=False,
                 return_list_too=False):
         row_str = self.fh.readline().rstrip()
-        if delim != None:
-            row_list = row_str.split(delim)
+        if self.delim != None:
+            row_list = row_str.split(self.delim)
         else:
             row_list = row_str.split()
         if return_dict == False:
@@ -58,7 +62,10 @@ class Tbl(object):
         else:
             row_dict = {}
             if len(self.col_idx) != len(row_list):
-                return row_dict
+                if return_list_too == True:
+                    return row_dict, row_list
+                else:
+                    return row_dict
             for col_name in self.col_idx:
                 i = self.col_idx[col_name]
                 row_dict[col_name] = row_list[i]
@@ -83,9 +90,12 @@ class Cnds(object):
         i = 0
         for line in fh:
             i += 1
+            if line[0] == "#": continue
             try:
                 data = line.rstrip().split()
                 [param, operand_str, value] = data[:3]
+                param = param.replace('"','')
+                value = value.replace('"','')
             except:
                 raise Exception("Improper formatting in " + self.cnds_file + ": " + \
                                 "line " + str(i) + " : " + line.rstrip())
@@ -94,9 +104,11 @@ class Cnds(object):
                 if os.path.isfile(value):
                     value = read_set_file(value)
                 else:
-                    value = value.split(",")
+                    value = set(value.split(","))
+            elif operand_str in ["grep","grepv"]:
+                operand = operand_str
+                value = value
             else:
-                print(operator.__dict__[operand_str])
                 try:
                     operand = operator.__dict__[operand_str]
                 except:
@@ -121,12 +133,29 @@ class Cnds(object):
             elif operand == "nin":
                 if val in value:
                     return False
+            elif operand == "eq":
+                if operand(val, value) == False:
+                    return False
+            elif operand == "grep":
+                if val.find(value) == -1:
+                    return False
+            elif operand == "grepv":
+                if val.find(value) != -1:
+                    return False
+ 
             else:
-                if  val.replace(".","").isdigit():
+                if val.replace(".","").isdigit() and value.replace(".","").isdigit():
                     if operand(float(val), float(value)) == False:
                         return False
                 else:
                     if operand(val, value) == False:
                         return False
         return True
+
+def read_set_file(set_filename):
+    set_out = set()
+    fh = misc.open_file(set_filename)
+    for line in fh:
+        set_out.add(line.rstrip())
+    fh.close()
 

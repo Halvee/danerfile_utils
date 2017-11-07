@@ -8,24 +8,44 @@ class VcfSite(object):
         self.alt = data_list[4]
 
 class VcfVariant(VcfSite):
-    def __init__(self, data_list):
+    def __init__(self, data_list, cols_replace_info=None, **kwargs):
         VcfSite.__init__(self, data_list)
-        self.qual = float(data_list[5])
+        try:
+            self.qual = float(data_list[5])
+        except:
+            self.qual = 0
         self.filter = data_list[6]
         self.info = data_list[7]
-        self.info_dict = load_key_val(self.info,sep=";",subsep="=")
+        self.cols_replace_info = cols_replace_info
+        self.info_dict = load_key_val(self.info,sep=";",subsep="=",
+                                      replacements=load_key_val(self.cols_replace_info,
+                                                                sep=",",
+                                                                subsep=":"))
         self.info_list = list(self.info_dict.keys())
         self.info_list.sort()
 
 class VcfGts(VcfVariant):
     def __init__(self, data_list, sample_list,
-                 gt_param_delim=":"):
-        VcfVariant.__init__(self, data_list)
+                 gt_param_delim=":", cols_replace_format=None,
+                 **kwargs):
+        VcfVariant.__init__(self, data_list, **kwargs)
         self.gt_param_delim=gt_param_delim
         self.format = data_list[8].split(self.gt_param_delim)
+        self.cols_replace_format=cols_replace_format
+        self.load_format_replacements()
         self.sample_gts = data_list[9:]
         self.gts = {}
         self.load_sample_gts(sample_list)
+
+    def load_format_replacements(self):
+        replacements=load_key_val(self.cols_replace_format,
+                                  sep=",", subsep=":")
+        if replacements == None:
+            return self
+        for i in range(len(self.format)):
+            if self.format[i] in replacements:
+                self.format[i] = replacements[self.format[i]]
+        return self
 
     def load_sample_gts(self, sample_list):
         for i in range(len(sample_list)):
@@ -49,7 +69,7 @@ class VcfGts(VcfVariant):
                 var_row.append(self.info_dict[col_name])
         sample_rows = []
         for sampleid in sample_list:
-            sample_row = var_row
+            sample_row = [sampleid] + var_row
             for col_name in metainfo_lists["FORMAT"]:
                 if col_name not in self.gts[sampleid]:
                     sample_row.append("0")
@@ -61,11 +81,17 @@ class VcfGts(VcfVariant):
 
 
 class VcfReader(object):
-    def __init__(self, vcf_fh, delim="\t"):
+    def __init__(self, vcf_fh, delim="\t", 
+                 cols_replace_info=None, 
+                 cols_replace_format=None):
         self.vcf_fh = vcf_fh
         self.delim = delim
         self.metainfo = {}
         self.vcf_header = []
+        self.cols_replace_info=cols_replace_info
+        self.cols_replace_format=cols_replace_format
+        self.cols_replace={"INFO":load_key_val(cols_replace_info,sep=",",subsep=":"),
+                           "FORMAT":load_key_val(cols_replace_format,sep=",",subsep=":")}
         self.metainfo_lists = {"INFO":[],"FORMAT":[]}
         self.sample_list = []
         self.vcf_entry = None
@@ -85,6 +111,9 @@ class VcfReader(object):
             if metainfo_classif not in self.metainfo:
                 self.metainfo[metainfo_classif] = []
             self.metainfo[metainfo_classif].append(keyval)
+            if self.cols_replace[metainfo_classif] != None:
+                if keyval["ID"] in self.cols_replace[metainfo_classif]:
+                    keyval["ID"] = self.cols_replace[metainfo_classif][keyval["ID"]]
             self.metainfo_lists[metainfo_classif].append(keyval["ID"])
         return self
 
@@ -108,20 +137,29 @@ class VcfReader(object):
         else:
             data = line.rstrip().split(self.delim)
             if len(data) > 0:
-                self.vcf_entry = VcfGts(data, self.sample_list)
+                self.vcf_entry = VcfGts(data, self.sample_list,
+                                        cols_replace_info=self.cols_replace_info,
+                                        cols_replace_format=self.cols_replace_format)
             elif len(data) > 5:
                 self.vcf_entry = VcfVariant(data)
             else:
                 self.vcf_entry = VcfSite(data)
             return self,2
 
-def load_key_val(keyval_str, sep=";", subsep="="):
+def load_key_val(keyval_str, sep=";", subsep="=", replacements=None):
+    if keyval_str == None: return None
     keyval = {}
     keyval_list = keyval_str.split(sep)
     for keyval_i in keyval_list:
         try:
             (key,val)=keyval_i.split(subsep)
-            keyval[key] = val
+            if replacements != None:
+                key_new = key
+                if key in replacements:
+                    key_new = replacements[key]
+            else:
+                key_new = key
+            keyval[key_new] = val
         except:
             keyval[keyval_i] = 1
     return keyval
