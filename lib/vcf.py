@@ -57,11 +57,13 @@ class VcfGts(VcfVariant):
                 self.gts[sample_i][format_j] = sample_i_vals[j]
         return self
 
-    def get_sample_rows(self, metainfo_lists, sample_list):
+    def get_sample_rows(self, metainfo_lists, sample_list, varid_delim="-"):
         sample_rows = []
         var_row = [self.chrom, self.pos, 
                    self.id, self.ref, self.alt,
                    self.qual, self.filter]
+        varid = varid_delim.join([self.chrom, str(self.pos),
+                                  self.ref, self.alt])
         for col_name in metainfo_lists["INFO"]:
             if col_name not in self.info_list:
                 var_row.append("0")
@@ -69,7 +71,7 @@ class VcfGts(VcfVariant):
                 var_row.append(self.info_dict[col_name])
         sample_rows = []
         for sampleid in sample_list:
-            sample_row = [sampleid] + var_row
+            sample_row = [varid, sampleid] + var_row
             for col_name in metainfo_lists["FORMAT"]:
                 if col_name not in self.gts[sampleid]:
                     sample_row.append("0")

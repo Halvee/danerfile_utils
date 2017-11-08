@@ -23,7 +23,7 @@ def main():
             elif dat[1] == 1:
                 if printed_header == False:
                     
-                    full_header = ["SAMPLE_ID"] + vcf_r.vcf_header[:7] + \
+                    full_header = ["VARIANT_ID", "SAMPLE_ID"] + vcf_r.vcf_header[:7] + \
                                   vcf_r.metainfo_lists["INFO"] + \
                                   vcf_r.metainfo_lists["FORMAT"]
                     print(args.delim.join(full_header))
