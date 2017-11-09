@@ -158,4 +158,5 @@ def read_set_file(set_filename):
     for line in fh:
         set_out.add(line.rstrip())
     fh.close()
+    return set_out
 

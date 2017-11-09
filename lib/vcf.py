@@ -54,7 +54,10 @@ class VcfGts(VcfVariant):
             sample_i_vals = self.sample_gts[i].split(self.gt_param_delim)
             for j in range(len(self.format)):
                 format_j = self.format[j]
-                self.gts[sample_i][format_j] = sample_i_vals[j]
+                try:
+                    self.gts[sample_i][format_j] = sample_i_vals[j]
+                except:
+                    self.gts[sample_i][format_j] = 0
         return self
 
     def get_sample_rows(self, metainfo_lists, sample_list, varid_delim="-"):
@@ -165,3 +168,18 @@ def load_key_val(keyval_str, sep=";", subsep="=", replacements=None):
         except:
             keyval[keyval_i] = 1
     return keyval
+
+def ad_min_perc_alt(ad_str, sep=",", allow_polymorph=False):
+    ad_vals = [int(i) for i in ad_str.split(sep)]
+    ad_tot = sum(ad_vals)
+    if ad_tot == 0: return 0
+    elif allow_polymorph==False and len(ad_vals) > 2: return 0
+    min_val = float("inf")
+    for i in range(1,len(ad_vals)):
+        if ad_vals[i] < min_val:
+            min_val = ad_vals[i]
+    perc_alt = float(min_val) / ad_tot
+    return perc_alt
+
+
+

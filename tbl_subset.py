@@ -1,6 +1,8 @@
 
+import os
+import sys
 import argparse
-from lib import tbl,misc
+from lib import tbl,misc,annot,vcf
 
 def main():
     args = parse_args()
@@ -10,6 +12,11 @@ def main():
     if len(args.cnds_in_out_files) % 2 != 0:
         print("ERROR : need an output file name for each input cnds file")
         sys.exit(1)
+
+    if args.min_perc_alt > 0.0:
+        tbl_i.header_list.append("PERC_ALT")    
+    if args.max_impact != None:
+        tbl_i.header_list.extend(["GENE_NAME","IMPACT"])
 
     i = 0 
     cnds_sets = []
@@ -24,11 +31,24 @@ def main():
         fh.close()
         out_files.append(out_file)
         i += 2
-
     while(1):
         row_dict, row_list = tbl_i.get_row(return_dict=True,
                                            return_list_too=True)
         if len(row_list) == 0 or len(row_dict) == 0: break
+        if args.min_perc_alt > 0.0:
+            row_dict["PERC_ALT"] = vcf.ad_min_perc_alt(row_dict["AD"])
+            if row_dict["PERC_ALT"] < args.min_perc_alt: continue
+            row_dict["PERC_ALT"] = str(row_dict["PERC_ALT"])
+            row_list.append(row_dict["PERC_ALT"])
+    
+        if args.max_impact != None:
+            annot_txs = annot.SnpeffAnnotTxs(row_dict[args.max_impact],
+                                             format=args.max_impact)
+            annot_txs.get_max_impact(protein_coding_only = args.protein_coding_only)
+            if annot_txs.max_eff == None: continue
+            row_dict["GENE_NAME"] = annot_txs.max_eff.gene_name
+            row_dict["IMPACT"] = annot_txs.max_eff.impact
+            row_list.extend([row_dict["GENE_NAME"], row_dict["IMPACT"]])
         for i in range(len(cnds_sets)):
             if cnds_sets[i].test(row_dict) == True:
                 row_str = args.out_delim.join(row_list)
@@ -47,6 +67,12 @@ def parse_args():
                       default="\t", help="delimiter for input table file.")
     args.add_argument("--out-delim", type=str, action="store",
                       default="\t", help="delimiter for output table file.")
+    args.add_argument("--min-perc-alt", type=float, action="store",
+                      default=0.0, help="min percent of reads that are alt allele.")
+    args.add_argument("--max-impact", type=str, action="store", choices=["ANN"],
+                      default=None, help="convert ANN or EFF to max impact, add GENE_NAME and IMPACT")
+    args.add_argument("--protein-coding-only", action="store_true", default=False,
+                      help="consider annotations from protein coding transcripts only.")
     args.add_argument("tbl_file", type=str, action="store",
                       help="name of input table file.")
     args.add_argument("cnds_in_out_files", nargs="+",

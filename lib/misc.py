@@ -20,3 +20,20 @@ def open_file(filename):
     else:
         fh = open(filename, "r")
     return fh
+
+def load_fam_trios(fam_filename):
+    proband_parents = {}
+    fh = open(fam_filename,"r")
+    for line in fh:
+        data = line.rstrip().split()
+        if data[5] == "2":
+            proband_parents[data[1]] = [data[2],
+                                        data[3]]
+    fh.close()
+    return proband_parents
+
+def between(val_x,range_y):
+    if range_y[0] <= val_x and val_x <= range_y[1]:
+        return True
+    else:
+        return False
