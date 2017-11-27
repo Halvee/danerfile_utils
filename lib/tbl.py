@@ -53,6 +53,10 @@ class Tbl(object):
     def get_row(self, return_dict=False,
                 return_list_too=False):
         row_str = self.fh.readline().rstrip()
+        if row_str == "":
+            return -1
+        elif row_str[0] == "#": 
+            return None
         if self.delim != None:
             row_list = row_str.split(self.delim)
         else:
