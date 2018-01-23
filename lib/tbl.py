@@ -11,9 +11,13 @@ class Tbl(object):
                  cols_recode_str=None):
         self.filename = filename
         self.fh = None
+        self.header_str = None
         self.header_list = None
         self.delim=delim
         self.col_idx = {}
+        self.row_str = None
+        self.row_list = []
+        self.row_dict = {}
         self.open_fh()
         if with_header == True: 
             self.load_cols_recode(cols_recode_str)
@@ -38,11 +42,8 @@ class Tbl(object):
         return self
 
     def header_to_idx(self, delim=None):
-        header_str = self.fh.readline().rstrip()
-        if self.delim != None:
-            self.header_list = header_str.split(self.delim)
-        else:
-            self.header_list = header_str.split()
+        self.header_str = self.fh.readline().rstrip()
+        self.header_list = self.header_str.split(self.delim)
         for i in range(len(self.header_list)):
             if self.header_list[i] in self.cols_recode_dict:
                 col_old = self.header_list[i]
@@ -50,33 +51,21 @@ class Tbl(object):
             self.col_idx[ self.header_list[i] ] = i
         return self
 
-    def get_row(self, return_dict=False,
-                return_list_too=False):
-        row_str = self.fh.readline().rstrip()
-        if row_str == "":
-            return -1
-        elif row_str[0] == "#": 
-            return None
-        if self.delim != None:
-            row_list = row_str.split(self.delim)
-        else:
-            row_list = row_str.split()
-        if return_dict == False:
-            return row_list
-        else:
-            row_dict = {}
-            if len(self.col_idx) != len(row_list):
-                if return_list_too == True:
-                    return row_dict, row_list
-                else:
-                    return row_dict
+    def get_row(self, 
+                return_dict=False):
+        self.row_str = self.fh.readline().rstrip()
+        if self.row_str == "":
+            return self
+        elif self.row_str[0] == "#": 
+            return self
+        
+        self.row_list = self.row_str.split(self.delim)
+        if return_dict == True:
+            self.row_dict = {}
             for col_name in self.col_idx:
                 i = self.col_idx[col_name]
-                row_dict[col_name] = row_list[i]
-            if return_list_too == True:
-                return row_dict, row_list
-            else:
-                return row_dict
+                self.row_dict[col_name] = self.row_list[i]
+        return self
 
     def close_fh(self):
         self.fh.close()
@@ -127,10 +116,19 @@ class Cnds(object):
         fh.close()
         return self
 
-    def test(self, val_dict):
+    def test(self, val_dict, forgive_missing_cnd=False):
         for cnd in self.cnds:
             [param, operand, value] = cnd
-            val = val_dict[param]
+            if param not in val_dict and forgive_missing_cnd==True: continue
+            try:
+                val = val_dict[param]
+            except:
+                if forgive_missing_cnd == True:
+                    continue
+                else:
+                    print("ERROR : cnds file param '"+param+"' missing from table.")
+                    sys.exit(1)
+
             if operand == "in":
                 if val not in value:
                     return False

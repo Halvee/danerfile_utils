@@ -1,5 +1,6 @@
 import argparse
 from lib.tbl import Tbl, Cnds
+import lib.misc as misc
 
 def main():
     args = parse_args()
@@ -14,7 +15,9 @@ def main():
     """
     create instance of Tbl class for input daner file. 
     """
-    daner = Tbl(args.daner_file, with_header=True, 
+    daner = Tbl(args.daner_file,
+                delim=args.in_delim,
+                with_header=True, 
                 cols_recode_str=args.header_cols_recode)
 
     """
@@ -47,20 +50,23 @@ def main():
         elif args.beta_to_or == True and header_list[i] == "BETA":
             header_list[i] = "OR"
 
-    header_str = args.delim.join(header_list)
-    print(header_str)
+    header_str = args.out_delim.join(header_list)
+    if args.header_remove == False:
+        print(header_str)
     
     """
     iterate through daner rows, only print those that pass cnds
     """
     while(1):
-        row_dict = daner.get_row(delim=None, 
-                                 return_dict=True)
-        if len(row_dict) == 0: 
+        daner.get_row(return_dict=True)
+        if daner.row_str == "":
             break
+        elif daner.row_str[0] == "#":
+            continue
         cnds_pass = True
         if cnds != None:
-            cnds_pass = cnds.test(row_dict)
+            cnds_pass = cnds.test(daner.row_dict,
+                                  forgive_missing_cnd=args.forgive_missing_cnd)
         if cnds_pass == True:
             row_list = []
             
@@ -68,8 +74,21 @@ def main():
             reconstruct row list
             """
             for col in header_list:
-                row_list.append(str(row_dict[col]))
-            row_str = args.delim.join(row_list)
+                if col == "BETA" and args.or_to_beta:
+                    if "OR" in daner.row_dict:
+                        new_val = misc.or_to_beta(daner.row_dict["OR"])
+                    else:
+                        new_val = daner.row_dict["BETA"]
+                    row_list.append(str(new_val))
+                elif col == "OR" and args.beta_to_or:
+                    if "BETA" in daner.row_dict:
+                        new_val = misc.beta_to_or(daner.row_dict["BETA"])
+                    else:
+                        new_val = daner.row_dict["OR"]
+                    row_list.append(str(new_val))
+                else:
+                    row_list.append(str(daner.row_dict[col]))
+            row_str = args.out_delim.join(row_list)
             print(row_str)
             
     daner.close_fh()
@@ -78,9 +97,11 @@ def main():
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument("-d","--delim", type=str,
-                      action="store", default="\t", 
-                      help="Delimiter for output daner.")
+    args.add_argument("--in-delim", type=str,
+                      action="store", default=None, 
+                      help="Delimiter for input daner.")
+    args.add_argument("--out-delim", type=str,
+                      action="store", default="\t")
     args.add_argument("--or-to-beta", action="store_true", default=False,
                       help="convert odds ratio values and corresponding std errors to beta values.")
     args.add_argument("--beta-to-or", action="store_true", default=False,
@@ -92,9 +113,13 @@ def parse_args():
                       default=None, help="comma-delimted list of old_col_name:new_col_name strings")
     args.add_argument("--header-subset", type=str, action="store",
                       default=None, help="comma-delimted list of header columns to subset on")
+    args.add_argument("--header-remove", action="store_true", default=False,
+                      help="don't print header to stdout")
     args.add_argument("--dummy-cols", type=str, action="store",
                       default=None, help="comma-delimited list of dummy header columns to add, " + \
                                          "of form header_col:global_col_value")
+    args.add_argument("--forgive-missing-cnd", action="store_true", default=False,
+                      help="don't end program if daner file is missing cnds file param.")
     args.add_argument("daner_file", 
                       help="Source LD clumped file for case/control, made by PLINK, " + \
                            "with min(P) variant tagged.")

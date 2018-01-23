@@ -1,6 +1,7 @@
 
 import sys
 import gzip
+import math
 
 def keyval_list_pair_to_dict(list_i, list_j):
     y = {}
@@ -37,3 +38,17 @@ def between(val_x,range_y):
         return True
     else:
         return False
+
+def beta_to_or(beta_val):
+    try:
+        x = math.exp(float(beta_val))
+    except:
+        x = "NA"
+    return x
+
+def or_to_beta(or_val):
+    try:
+        x = math.log(float(or_val))
+    except:
+        x = "NA"
+    return x
