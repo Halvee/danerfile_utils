@@ -67,6 +67,10 @@ def main():
         if cnds != None:
             cnds_pass = cnds.test(daner.row_dict,
                                   forgive_missing_cnd=args.forgive_missing_cnd)
+        if args.nonambiguous_only == True:
+            a1a2 = daner.row_dict["A1"] + daner.row_dict["A2"]
+            if a1a2 in set(["AT","TA","GC","CG"]):
+                cnds_pass = False
         if cnds_pass == True:
             row_list = []
             
@@ -120,6 +124,9 @@ def parse_args():
                                          "of form header_col:global_col_value")
     args.add_argument("--forgive-missing-cnd", action="store_true", default=False,
                       help="don't end program if daner file is missing cnds file param.")
+    args.add_argument("--nonambiguous-only", action="store_true", default=False,
+                      help="only keep rows where variant genotype is clear " +\
+                           "regardless of strand, ie. no A/T, T/A, G/C or C/G.")
     args.add_argument("daner_file", 
                       help="Source LD clumped file for case/control, made by PLINK, " + \
                            "with min(P) variant tagged.")
