@@ -2,7 +2,7 @@
 import os
 import sys
 import argparse
-from lib import tbl,misc,annot,vcf
+from genetics_munge_lib import tbl,misc,annot,vcf
 
 def main():
     args = parse_args()

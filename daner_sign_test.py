@@ -1,7 +1,7 @@
 import sys
 import argparse
-from lib.tbl import Tbl 
-from lib.daner import Marker
+from genetics_munge_lib.tbl import Tbl 
+from genetics_munge_lib.daner import Marker
 try:
     from scipy.stats import binom_test
 except:

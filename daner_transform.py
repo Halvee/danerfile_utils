@@ -1,6 +1,6 @@
 import argparse
-from lib.tbl import Tbl, Cnds
-import lib.misc as misc
+from genetics_munge_lib.tbl import Tbl, Cnds
+import genetics_munge_lib.misc as misc
 
 def main():
     args = parse_args()

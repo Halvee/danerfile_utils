@@ -1,6 +1,6 @@
 
 import argparse
-from lib import vcf,tbl,misc
+from genetics_munge_lib import vcf,tbl,misc
 
 def main():
     args = parse_args()

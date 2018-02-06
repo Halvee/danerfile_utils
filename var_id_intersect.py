@@ -3,7 +3,7 @@
 import sys
 import argparse
 import gzip
-from lib import misc, tbl
+from genetics_munge_lib import misc, tbl
 
 """
 Read in a set of variant files (BIM, VCF, or daner). Take the 
