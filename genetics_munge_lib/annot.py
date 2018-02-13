@@ -30,54 +30,52 @@ class AnnotTxs(object):
             self.annots[i] = AnnotTx(self.annot_keys, tx, delim=self.subdelim)
         return self
 
-    def max_csq(self, impact_max=True, 
-                sift_min=False, polyphen_max=False):
-        global IMPACT_RANKINGS_INV
-        annot_classifs = {}
-        max_annot_ranking = -1
-        max_gene_symbols_set = set()
-        max_ppn = 0
-        min_sift = 1
+    def max_csq(self, csqs_return, csq_key, csq_func):
+        if csq_func != "max" and csq_func != "min":
+            raise Exception(csq_func + " not applicable on " + \
+                            csq_key + ", max or min only.")
+        min_val = float("inf")
+        max_val = - float("inf")
+        csqs_return_out = []
+        for csq in csqs_return:
+            csqs_return_out.append([])
         for i in range(len(self.annots)):
-            annot_impact = self.annots[i].__dict__["IMPACT"]
-            if annot_impact == "": annot_impact = "NA"
-            impact_ranking = IMPACT_RANKINGS[annot_impact]
-            if impact_ranking not in annot_classifs: 
-                annot_classifs[impact_ranking] = set()
-            annot_classifs[impact_ranking].add(i)
-            if sift_min == True:
-                annot_sift = self.annots[i].__dict__["SIFT"]
-                if annot_sift == "": annot_sift = "1"
-                annot_sift = float(annot_sift)
-                if annot_sift < min_sift: min_sift = annot_sift
-            if polyphen_max == True:
-                annot_polyphen = self.annots[i].__dict__["PolyPhen"]
-                if annot_polyphen == "": annot_polyphen = "0"
-                annot_polyphen = float(annot_polyphen)
-                if annot_polyphen > max_ppn: max_ppn = annot_polyphen
+            csq_i = self.annots[i].__dict__[csq_key]
+            if csq_i == "": 
+                csq_i = "NA"
+                continue
+            elif csq_key == "IMPACT":
+                csq_i = IMPACT_RANKINGS[csq_i]
+            else:
+                csq_i = float(csq_i)
+            if csq_i > max_val: max_val = csq_i
+            if csq_i < min_val: min_val = csq_i
+        i_keep={"max":[], "min":[]}
+        for i in range(len(self.annots)):
+            csq_i = self.annots[i].__dict__[csq_key]
+            if csq_i == "": 
+                csq_i = "NA"
+                continue
+            if csq_key == "IMPACT":
+                csq_i = IMPACT_RANKINGS[csq_i]
+            if float(csq_i) == max_val:
+                i_keep["max"].append(i)
+            if float(csq_i) == min_val:
+                i_keep["min"].append(i)
 
-        
-        if len(annot_classifs) == 0:
-            max_annot_ranking = -1
-            max_gene_symbols="NA"
-        else:
-            max_annot_ranking = max(annot_classifs.keys())
-            for i in annot_classifs[max_annot_ranking]:
-                annot = self.annots[i]
-                max_gene_symbols_set.add(annot.SYMBOL)
-            if "" in max_gene_symbols_set: max_gene_symbols_set.remove("")
-            max_gene_symbols = list(max_gene_symbols_set)
-            max_gene_symbols.sort()
-            max_gene_symbols = ",".join(max_gene_symbols)
-            if max_gene_symbols == "": max_gene_symbols = "NA"
-
-        max_annot_ranking_classif = IMPACT_RANKINGS_INV[max_annot_ranking]
-        max_out = {"CSQ_MAX_IMPACT": max_annot_ranking_classif,
-                   "CSQ_MAX_IMPACT_GENESYMBOL": max_gene_symbols,
-                   "CSQ_MAX_PolyPhen": max_ppn,
-                   "CSQ_MAX_SIFT": min_sift}
-
-        return max_out
+        for i in i_keep[csq_func]:
+            for j in range(len(csqs_return)):
+                val = self.annots[i].__dict__[csqs_return[j]]
+                if val == "": continue
+                csqs_return_out[j].append(val)
+        if len(csqs_return_out) == 0:
+            csqs_return_out = "NA"
+        for i in range(len(csqs_return_out)):
+            if len(csqs_return_out[i]) == 0:
+                csqs_return_out[i] = "NA"
+            else:
+                csqs_return_out[i] = ",".join(list(set(csqs_return_out[i])))
+        return csqs_return_out
 
 class AnnotTx(object):
     def __init__(self, keyvals, 
