@@ -98,6 +98,7 @@ class VcfReader(object):
         self.cols_replace={"INFO":load_key_val(cols_replace_info,sep=",",subsep=":"),
                            "FORMAT":load_key_val(cols_replace_format,sep=",",subsep=":")}
         self.metainfo_lists = {"INFO":[],"FORMAT":[]}
+        self.metainfo_dicts = {}
         self.sample_list = []
         self.vcf_entry = None
         self.linenum = 0
@@ -120,6 +121,7 @@ class VcfReader(object):
                 if keyval["ID"] in self.cols_replace[metainfo_classif]:
                     keyval["ID"] = self.cols_replace[metainfo_classif][keyval["ID"]]
             self.metainfo_lists[metainfo_classif].append(keyval["ID"])
+            self.metainfo_dicts[keyval["ID"]] = keyval
         return self
 
     def load_header(self, line):
@@ -181,5 +183,13 @@ def ad_min_perc_alt(ad_str, sep=",", allow_polymorph=False):
     perc_alt = float(min_val) / ad_tot
     return perc_alt
 
-
-
+def process_csq_header_desc(header_desc_str,
+                            replace_chars=["'",'"'," "],
+                            main_split="Format: ",
+                            subsplit="|"):
+    header_desc_list = header_desc_str.split(main_split)
+    header_desc_str = header_desc_list[-1]
+    for replace_char in replace_chars:
+        header_desc_str = header_desc_str.replace(replace_char, "")
+    header_desc_list = header_desc_str.split(subsplit)
+    return header_desc_list
