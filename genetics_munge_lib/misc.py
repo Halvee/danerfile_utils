@@ -1,6 +1,7 @@
 
 import sys
 import gzip
+import io
 import math
 
 def keyval_list_pair_to_dict(list_i, list_j):
@@ -17,7 +18,8 @@ def open_file(filename):
     if filename == "stdin":
         fh = sys.stdin
     elif filename.find(".gz") != -1:
-        fh = gzip.open(filename, "rb")
+        fh_gz = gzip.open(filename, "rb")
+        fh = io.BufferedReader(fh_gz)
     else:
         fh = open(filename, "r")
     return fh

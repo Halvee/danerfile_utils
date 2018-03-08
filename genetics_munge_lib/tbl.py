@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import gzip
@@ -36,7 +37,8 @@ class Tbl(object):
         if self.filename == "stdin":
             self.fh = sys.stdin
         elif self.filename.find(".gz") != -1:
-            self.fh = gzip.open(self.filename, "rb")
+            fh = gzip.open(self.filename, "rb")
+            self.fh = io.BufferedReader(fh)
         else:
             self.fh = open(self.filename, "r")
         return self
