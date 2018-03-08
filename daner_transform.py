@@ -21,12 +21,24 @@ def main():
                 cols_recode_str=args.header_cols_recode)
 
     """
-    get and print daner header
+    copy any columns where user wishes to
+    """
+    cols_copy = {}
+    if args.cols_copy != None:
+        for col_copy in args.cols_copy.split(","):
+            col_fromto = col_copy.split(":")
+            col_from = col_fromto[0]
+            col_to = col_fromto[1]
+            cols_copy[col_to] = col_from
+
+    """
+    get daner header
     """
     if args.header_subset != None:
         header_list = args.header_subset.split(",")
     else:
         header_list = daner.header_list
+
 
     """
     if header recodings are defined by user, perform col name recoding
@@ -90,6 +102,9 @@ def main():
                     else:
                         new_val = daner.row_dict["OR"]
                     row_list.append(str(new_val))
+                elif col in cols_copy:
+                    orig_col = cols_copy[col]
+                    row_list.append(str(daner.row_dict[orig_col]))
                 else:
                     row_list.append(str(daner.row_dict[col]))
             row_str = args.out_delim.join(row_list)
@@ -113,6 +128,9 @@ def parse_args():
     args.add_argument("--cnds-file", type=str, action="store", default=None,
                       help="File where each row is a condition that each daner row must meet, "+ \
                            "each row has format 'parameter operator threshold'")
+    args.add_argument("--cols-copy", type=str, action="store",
+                      default=None, help="comma-delimited list of " + \
+                      "col_to_copy:new_colname")
     args.add_argument("--header-cols-recode", type=str, action="store",
                       default=None, help="comma-delimted list of old_col_name:new_col_name strings")
     args.add_argument("--header-subset", type=str, action="store",
