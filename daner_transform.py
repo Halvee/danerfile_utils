@@ -32,6 +32,17 @@ def main():
             cols_copy[col_to] = col_from
 
     """
+    if defined add dummy columns
+    """
+    dummy_cols = {}
+    if args.dummy_cols != None:
+        for dummy_col in args.dummy_cols.split(","):
+            col_keyval = dummy_col.split(":")
+            col_key = col_keyval[0]
+            col_val = col_keyval[1]
+            dummy_cols[col_key] = col_val
+
+    """
     get daner header
     """
     if args.header_subset != None:
@@ -105,6 +116,8 @@ def main():
                 elif col in cols_copy:
                     orig_col = cols_copy[col]
                     row_list.append(str(daner.row_dict[orig_col]))
+                elif col in dummy_cols:
+                    row_list.append(str(dummy_cols[col]))
                 else:
                     row_list.append(str(daner.row_dict[col]))
             row_str = args.out_delim.join(row_list)
