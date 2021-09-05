@@ -1,2 +1,3 @@
 *.pyc
 genetics_munge_lib/*.pyc
+**/__pycache__/
