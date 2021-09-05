@@ -3,7 +3,7 @@ import os
 import sys
 import gzip
 import operator
-import misc
+from .misc import open_file
 
 class Tbl(object):
     def __init__(self, filename, 
@@ -158,7 +158,7 @@ class Cnds(object):
 
 def read_set_file(set_filename):
     set_out = set()
-    fh = misc.open_file(set_filename)
+    fh = open_file(set_filename)
     for line in fh:
         set_out.add(line.rstrip())
     fh.close()
