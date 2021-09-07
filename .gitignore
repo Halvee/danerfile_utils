@@ -2,3 +2,4 @@
 genetics_munge_lib/*.pyc
 **/__pycache__/
 **/.DS_Store
+data/1kg_phase3_majorminor/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5c.20130502.sites.vcf.gz
