@@ -33,12 +33,15 @@ class Tbl(object):
             self.cols_recode_dict[col_old] = col_new
         return self
 
-    def open_fh(self):
+    def open_fh(self, encoding='utf-8'):
         if self.filename == "stdin":
             self.fh = sys.stdin
         elif self.filename.find(".gz") != -1:
-            fh = gzip.open(self.filename, "rb")
-            self.fh = io.BufferedReader(fh)
+            # Try to pass along encoding type. Else, just open without passing encoding.
+            try:
+                self.fh = gzip.open(self.filename, 'rt', encoding=encoding)
+            except:
+                self.fh = gzip.open(self.filename, 'rt')
         else:
             self.fh = open(self.filename, "r")
         return self

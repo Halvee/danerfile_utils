@@ -1,3 +1,4 @@
 *.pyc
 genetics_munge_lib/*.pyc
 **/__pycache__/
+**/.DS_Store
