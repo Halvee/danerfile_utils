@@ -256,7 +256,7 @@ def parse_args():
                       help="number of places to round effsize values to, if flipped.")
     args.add_argument("--pop-refalt-prefix", type=str,
                       action="store",
-                      default="data/1kg_phase3_majorminor/hg19/1000_genomes_phase3.hg19",
+                      default=None,
                       help="prefix name for " + \
                            "tab-delimited files with 1000 genomes " + \
                            "phase 3 simplified allele frequencies. For a " + \
