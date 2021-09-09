@@ -3,14 +3,14 @@ import sys
 import re
 from danerfile_utils_lib.tbl import Tbl, Cnds
 from danerfile_utils_lib.daner import Marker
-import danerfile_utils_lib.misc as misc
+from danerfile_utils_lib.misc import ref_fh_is_withchr
 from danerfile_utils_lib.poprefalt import PopRefAlt, a1_a2_direction
 
 def main():
     args = parse_args()
 
     """
-    Load reference file data
+    Load reference file data, determine if contig names have 'chr' in front
     """
     searchres_fasta_gz=re.search(".fasta.gz$", args.ref_file, flags=0)
     searchres_fa_gz=re.search(".fa.gz$", args.ref_file, flags=0)
@@ -26,6 +26,7 @@ def main():
             print("ERROR : module 'pysam' required to parse ref fasta file.")
             sys.exit(1)
         ref_fh = pysam.FastaFile(args.ref_file)
+        is_withchr = ref_fh_is_withchr(ref_fh, "pysam")
     elif searchres_2bit != None:
         try:
             import twobitreader
@@ -34,7 +35,7 @@ def main():
             sys.exit(1)
         ref_fh = twobitreader.TwoBitFile(args.ref_file)
         is_2bit=True
-
+        is_withchr = ref_fh_is_withchr(ref_fh, "twobitreader")
     else:
         print("ERROR : ref_file needs to be one of the following formats : ")
         print("        .fasta.gz, .fa.gz, .fasta, .fa, .2bit")
@@ -116,9 +117,12 @@ def main():
         pos = int(marker.bp)
         pos0 = pos - 1
 
-        # if not there, add 'chr' prefix to chrom
-        if chrom.find('chr') != 0:
+        # adjust formatting of chrom based on whether or not ref contigs have 'chr'
+        x_is_withchr = chrom.find("chr") == 0
+        if is_withchr == True and x_is_withchr == False:
             chrom = 'chr' + chrom
+        elif is_withchr == False and x_is_withchr == True:
+            chrom = chrom.replace("chr","")
 
         # get ref allele at chr/pos, change to uppercase
         if is_2bit == True:

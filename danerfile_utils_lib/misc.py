@@ -54,3 +54,20 @@ def or_to_beta(or_val):
     except:
         x = "NA"
     return x
+
+def ref_fh_is_withchr(ref_fh, ref_fh_type):
+    # assumed that generally most ref files will be without chr
+    is_withchr=False
+    if ref_fh_type == "pysam":
+        chroms = ref_fh.references
+        for chrom in chroms:
+            if chrom.find("chr") == 0:
+                is_withchr = True
+    elif ref_fh_type == "twobitreader":
+        chroms =  ref_fh.keys()
+        for chrom in chroms:
+            if chrom.find("chr") == 0:
+                is_withchr = True
+    else:
+        raise ValueError("filehandle type '"+ref_fh_type+"' not supported.")
+    return is_withchr
