@@ -23,23 +23,19 @@ def main():
         try:
             import pysam
         except:
-            print("ERROR : module 'pysam' required to parse ref fasta file.")
-            sys.exit(1)
+            sys.exit("\nERROR : module 'pysam' required to parse ref fasta file.\n")
         ref_fh = pysam.FastaFile(args.ref_file)
         is_withchr = ref_fh_is_withchr(ref_fh, "pysam")
     elif searchres_2bit != None:
         try:
             import twobitreader
         except:
-            print("ERROR : module 'twobitreader' required to parse ref 2bit file.")
-            sys.exit(1)
+            sys.exit("\nERROR : module 'twobitreader' required to parse ref 2bit file.\n")
         ref_fh = twobitreader.TwoBitFile(args.ref_file)
         is_2bit=True
         is_withchr = ref_fh_is_withchr(ref_fh, "twobitreader")
     else:
-        print("ERROR : ref_file needs to be one of the following formats : ")
-        print("        .fasta.gz, .fa.gz, .fasta, .fa, .2bit")
-        sys.exit(1)
+        sys.exit("\nERROR : ref_file needs to be one of the following formats : \n")
 
     """
     create instance of Tbl class for input daner file. 
@@ -48,7 +44,7 @@ def main():
                 delim=args.in_delim,
                 with_header=True)
     if len(daner.header_list) <= 1:
-        raise Exception("Only 0 or 1 columns read in. Do you have --in-delim set right?")
+        sys.exit("\nERROR : Only 0 or 1 columns read in. Do you have --in-delim set right?\n")
 
     """
     Use BETA as effsize column by default. If absent, test for presence of OR.
@@ -58,7 +54,7 @@ def main():
     if "BETA" not in daner.header_list:
         effsize_col = "OR"
         if "OR" not in daner.header_list:
-            raise ValueError("Required effsize column (BETA or OR) not found in danerfile.")
+            sys.exit("\nERROR : required effsize column (BETA or OR) not found in danerfile.\n")
 
     """
     if defined, load pop refalt tsv
@@ -106,8 +102,13 @@ def main():
                         eff=daner.row_dict[effsize_col],
                         eff_type=effsize_col)
         if args.case_freq_col != None and args.ctrl_freq_col != None:
-            marker.frq_a = float(daner.row_dict[args.case_freq_col])
-            marker.frq_u = float(daner.row_dict[args.ctrl_freq_col])
+            try:
+                marker.frq_a = float(daner.row_dict[args.case_freq_col])
+                marker.frq_u = float(daner.row_dict[args.ctrl_freq_col])
+            except:
+                sys.exit("\nERROR : non-numeric AFs detected. Ensure " + \
+                         "all AFs are numeric before running.\n")
+                 
 
         # only keep single nucleotide variants (ACGT). indels not supported for now.
         if marker.is_snv == False: continue
@@ -153,7 +154,7 @@ def main():
                 marker.strand_flip()
                 marker.allele_flip()
             else:
-                raise ValueError("Cannot map reference nucleotide at site to daner entry.")
+                sys.exit("\nERROR : cannot map reference nucleotide at site to daner entry.\n")
 
         else:
             # skip if control freq column not defined
@@ -169,7 +170,7 @@ def main():
             elif ref == marker.a1:
                 alt = marker.a2
             else:
-                raise ValueError("Cannot map reference nucleotide at site to daner entry.")
+                sys.exit("\nERROR : cannot map reference nucleotide at site to daner entry.\n")
 
             # get refalt dir from pop refalt data 
             refalt_dir = pop_refalt.refalt_dir(marker.chr, 
