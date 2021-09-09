@@ -1,3 +1,4 @@
+import sys
 import gzip
 import operator
 
@@ -67,6 +68,14 @@ class Marker(object):
         self.a1 = a2_old
         self.a2 = a1_old
         self.name_ref = "-".join([self.chr,str(self.bp),self.a1,self.a2])
+        
+        # numeric effect must be provided, if not, then halt
+        try:
+            assert isinstance(self.eff, float)
+        except:
+            sys.exit("ERROR : non-numeric effect sizes detected, " + \
+                     "remove from input file and then rerun for proper allele flipping.")
+
         # flip effect directions
         if self.eff_type == "BETA":
             self.eff = self.eff * -1
