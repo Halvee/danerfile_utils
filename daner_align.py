@@ -241,21 +241,16 @@ def parse_args():
                       action="store", default="A2")
     args.add_argument("--effsize-col", type=str,
                       action="store", default="BETA")
-    args.add_argument("--freq-col", type=str,
-                      action="store", default=None,
-                      help="column name for control a1 freq in " + \
-                           "input daner file. Required for pop freq-based " + \
-                           "rescue of ambiguous variants.")
     args.add_argument("--case-freq-col", type=str,
                       action="store", default=None,
-                      help="column name for control a1 freq in " + \
-                           "input daner file. Required for pop freq-based " + \
-                           "rescue of ambiguous variants.")
-    args.add_argument("--ctrl-freq-col", type=str,
+                      help="column name for case a1 freq in " + \
+                           "input daner file.")
+    args.add_argument("--ctrl-freq-col", "--freq-col", type=str,
                       action="store", default=None,
-                      help="column name for control a1 freq in " + \
+                      help="column name for control or overall a1 freq in " + \
                            "input daner file. Required for pop freq-based " + \
-                           "rescue of ambiguous variants.")
+                           "rescue of ambiguous variants. If outcome is " + \
+                           "continuous, place column for overall frequency here.")
     args.add_argument("--round", type=int, 
                       action="store", default=6,
                       help="number of places to round effsize values to, if flipped.")
