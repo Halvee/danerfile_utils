@@ -98,11 +98,15 @@ class Marker(object):
                 raise ValueError('non-ATGC character in A1/A2 (' + self.a1 + \
                                  '/' + self.a2 + ')')
         # flip a1
-        for i in range(len(self.a1)):
-            self.a1[i] = STRANDFLIP_NTS[self.a1[i]]
+        a1_nts = list(self.a1)
+        for i in range(len(a1_nts)):
+            a1_nts[i] = STRANDFLIP_NTS[a1_nts[i]]
+        self.a1 = "".join(a1_nts)
         # flip a2
-        for i in range(len(self.a2)):
-            self.a2[i] = STRANDFLIP_NTS[self.a2[i]]
+        a2_nts = list(self.a2)
+        for i in range(len(a2_nts)):
+            a2_nts[i] = STRANDFLIP_NTS[a2_nts[i]]
+        self.a2 = "".join(a2_nts)
         return self
 
     def get_eff_dir(self):
