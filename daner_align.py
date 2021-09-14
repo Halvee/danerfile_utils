@@ -57,6 +57,18 @@ def main():
             sys.exit("\nERROR : required effsize column (BETA or OR) not found in danerfile.\n")
 
     """
+    if defined, get formatted ambiguous freq range where vars inside are excluded
+    """
+    ambiguous_af_range_exclude = None
+    if args.ambiguous_af_range_exclude != None:
+        excl_list = args.ambiguous_af_range_exclude.split("-")
+        try:
+            ambiguous_af_range_exclude = [float(excl_list[0]),float(excl_list[1])]
+        except:
+            sys.exit("ERROR : input for opt --ambiguous-af-range-exclude not " \
+                     "in format 'LOWERLIMIT-UPPERLIMIT'")
+
+    """
     if defined, load pop refalt tsv
     """
     pop_refalt = None
@@ -101,14 +113,21 @@ def main():
                         a2=daner.row_dict[args.a2_col],
                         eff=daner.row_dict[effsize_col],
                         eff_type=effsize_col)
-        if args.case_freq_col != None and args.ctrl_freq_col != None:
+
+        # add AFs to marker obj
+        if args.ctrl_freq_col != None:
             try:
-                marker.frq_a = float(daner.row_dict[args.case_freq_col])
                 marker.frq_u = float(daner.row_dict[args.ctrl_freq_col])
+                marker.frq = float(daner.row_dict[args.ctrl_freq_col])
             except:
                 sys.exit("\nERROR : non-numeric AFs detected. Ensure " + \
                          "all AFs are numeric before running.\n")
-                 
+        if args.case_freq_col != None:
+            try:
+                marker.frq_a = float(daner.row_dict[args.case_freq_col])
+            except:
+                sys.exit("\nERROR : non-numeric AFs detected. Ensure " + \
+                         "all AFs are numeric before running.\n")
 
         # only keep single nucleotide variants (ACGT). indels not supported for now.
         if marker.is_snv == False: continue
@@ -178,7 +197,13 @@ def main():
                                                ref, alt)
             # get a1 control freq in daner file
             a1_freq = float(daner.row_dict[args.ctrl_freq_col])
-            
+
+            # if ambiguous AF exclude range defined, skip if variant falls
+            # within defined AF range
+            if ambiguous_af_range_exclude != None:
+                if (ambiguous_af_range_exclude[0] <= a1_freq) and (a1_freq <= ambiguous_af_range_exclude[1]):
+                    continue
+
             # get a1 a2 pop direction
             a1a2_dir = a1_a2_direction(marker.a2, 
                                        marker.a1, 
@@ -187,7 +212,7 @@ def main():
             # only proceed if directions aren't set as 'none'
             if a1a2_dir == None or refalt_dir == None:
                 continue
-            
+
             # if refalt allelic balance doesn't match a1a2, then perform allele flip
             if a1a2_dir != refalt_dir:
                 marker.allele_flip()
@@ -254,6 +279,13 @@ def parse_args():
     args.add_argument("--round", type=int, 
                       action="store", default=6,
                       help="number of places to round effsize values to, if flipped.")
+    args.add_argument("--ambiguous-af-range-exclude", action="store", type=str, default=None,
+                      help="For ambiguous (A/T, G/C) SNVs, allele frequency " + \
+                           "range in daner file to subset on, " + \
+                           "in form of LOWERLIMIT-UPPERLIMIT. " + \
+                           "If range is defined, an ambiguous SNV must fall " + \
+                           "outside of range in daner file to be considered " + \
+                           "for inclusion.")
     args.add_argument("--pop-refalt-prefix", type=str,
                       action="store",
                       default=None,

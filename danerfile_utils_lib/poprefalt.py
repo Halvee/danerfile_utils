@@ -59,13 +59,7 @@ class PopRefAlt(object):
             if ref not in self.pop_refalt[chrom][pos]:
                 self.pop_refalt[chrom][pos][ref] = dict()
             if alt not in self.pop_refalt[chrom][pos][ref]:
-                af = float(pop_refalt_tbl.row_dict[self.af_col])
-                if af < 0.5:
-                    val = 2
-                elif af > 0.5:
-                    val = 1
-                else:
-                    val = 0
+                val = float(pop_refalt_tbl.row_dict[self.af_col])
                 self.pop_refalt[chrom][pos][ref][alt] = val
 
         return self
