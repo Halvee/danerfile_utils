@@ -92,6 +92,18 @@ def main():
             pop_refalt.load_refalt_tsv(pop_refalt_tsv_i)
 
     """
+    init vars for tracking number of allele/strand flips
+    """
+    nvar=0
+    nvar_match=0
+    nvar_strandflip=0
+    nvar_alleleflip=0
+    nvar_strandalleleflip=0
+    nvar_ambig_popfreq_match=0
+    nvar_ambig_popfreq_alleleflip=0
+    nvar_out=0
+
+    """
     iterate through daner rows, and for each one, align A1 to reference allele,
     A2 to the alternate allele.
     """
@@ -104,6 +116,9 @@ def main():
             break
         elif daner.row_str[0] == "#":
             continue
+
+        # increment var count by 1
+        nvar += 1
 
         # form instance of marker obj
         marker = Marker(daner.row_dict[args.varid_col],
@@ -161,17 +176,20 @@ def main():
             # If still no match, then call error.
             if ref == marker.a2:
                 # no strand or allele flipping required
-                pass
+                nvar_match += 1
             elif ref == marker.a1:
                 # allele flip is required
                 marker.allele_flip()
+                nvar_alleleflip += 1
             elif ref == marker.a2f:
                 # strand flip is required
                 marker.strand_flip()
+                nvar_strandflip += 1
             elif ref == marker.a1f:
                 # a strand flip followed by an allele flip required
                 marker.strand_flip()
                 marker.allele_flip()
+                nvar_strandalleleflip += 1
             else:
                 sys.exit("\nERROR : cannot map reference nucleotide at site to daner entry.\n")
 
@@ -216,6 +234,9 @@ def main():
             # if refalt allelic balance doesn't match a1a2, then perform allele flip
             if a1a2_dir != refalt_dir:
                 marker.allele_flip()
+                nvar_ambig_popfreq_alleleflip += 1
+            else:
+                nvar_ambig_popfreq_match += 1
 
         # after strand/allele flips, ref and alt should now be a2 and a1 respectively
 
@@ -243,7 +264,27 @@ def main():
         row_str = args.out_delim.join(row_list)
         print(row_str)
 
+        # inrement total output variant count by 1
+        nvar_out += 1
+
     daner.close_fh()
+
+    """
+    if defined by user, write nvar stats to log file
+    """
+    if args.log_file != None:
+        log_fh = open(args.log_file, "w")
+        log_fh.write("nvar_input\t" + str(nvar) + "\n")
+        log_fh.write("nvar_match\t" + str(nvar_match) + "\n") 
+        log_fh.write("nvar_strandflip\t" + str(nvar_strandflip) + "\n")
+        log_fh.write("nvar_alleleflip\t" + str(nvar_alleleflip) + "\n")
+        log_fh.write("nvar_strandalleleflip\t" + str(nvar_strandalleleflip) + "\n")
+        log_fh.write("nvar_ambig_popfreq_match\t" + \
+                     str(nvar_ambig_popfreq_match) + "\n")
+        log_fh.write("nvar_ambig_popfreq_alleleflip\t" + \
+                     str(nvar_ambig_popfreq_alleleflip) + "\n")
+        log_fh.write("nvar_output\t" + str(nvar_out) + "\n")
+        log_fh.close()
 
     return
 
@@ -300,6 +341,8 @@ def parse_args():
                       action="store", default="EUR_AF",
                       help="column from pop refalt tsv to use for allele " +\
                            "frequency based alignment")
+    args.add_argument("--log-file", type=str, action="store", default=None,
+                      help="log file to write allele/strand flip statistics to.")
     args.add_argument("ref_file", type=str,
                       help="reference genome file. The following filetypes are "+ \
                            "supported  : fasta, fasta.gz, fa, fa.gz, 2bit")
